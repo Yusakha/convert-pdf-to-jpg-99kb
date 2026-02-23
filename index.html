@@ -257,6 +257,11 @@
             border-color: #adb5bd;
         }
 
+        .secondary-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .status-bar {
             background: #e9ecef;
             padding: 10px 20px;
@@ -281,6 +286,17 @@
             max-height: 200px;
             border-radius: 8px;
             margin: 10px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .auto-download-badge {
+            background: #28a745;
+            color: white;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-left: 10px;
         }
     </style>
 </head>
@@ -343,7 +359,9 @@
 
                 <div class="button-group">
                     <button class="secondary-btn" id="clearLogBtn" onclick="clearLog()">Clear Log</button>
-                    <button class="secondary-btn" id="downloadBtn" onclick="downloadFile()" disabled>Download JPG</button>
+                    <button class="secondary-btn" id="downloadBtn" onclick="downloadFile()" disabled>
+                        ⬇️ Download JPG
+                    </button>
                 </div>
 
                 <!-- Preview Area -->
@@ -364,7 +382,7 @@
         // State management
         let currentPDF = null;
         let currentPDFName = '';
-        let convertedImage = null;
+        let convertedImageBlob = null;
         let convertedFileName = '';
         let isProcessing = false;
 
@@ -482,6 +500,7 @@
             isProcessing = true;
             convertBtn.disabled = true;
             convertBtn.textContent = 'PROCESSING...';
+            downloadBtn.disabled = true;
             updateStatus('Converting...');
             clearLog();
             
@@ -498,10 +517,9 @@
             } catch (error) {
                 log(`ERROR: ${error.message}`, 'error');
                 updateStatus('Conversion failed');
-            } finally {
-                isProcessing = false;
                 convertBtn.disabled = false;
                 convertBtn.textContent = 'CONVERT PDF TO JPG';
+                isProcessing = false;
             }
         }
 
@@ -539,16 +557,16 @@
             
             // Convert canvas to blob with target size
             const blob = await canvasToBlobWithTargetSize(canvas, targetSizeKB);
+            convertedImageBlob = blob;
             
             updateProgress(90);
-            
-            // Create preview
-            const imageUrl = URL.createObjectURL(blob);
-            convertedImage = imageUrl;
             
             // Generate filename
             const newName = generateNewFilename(file.name) || 'converted.jpg';
             convertedFileName = newName;
+            
+            // Create preview
+            const imageUrl = URL.createObjectURL(blob);
             
             // Show preview
             previewArea.innerHTML = `
@@ -556,14 +574,22 @@
                 <p style="font-size: 12px; color: #666;">Preview (${(blob.size/1024).toFixed(1)}KB)</p>
             `;
             
-            // Enable download
+            // Enable download button
             downloadBtn.disabled = false;
-            downloadBtn.onclick = () => downloadFile(blob, newName);
             
             log('CONVERSION COMPLETE!', 'success');
             log(`File size: ${(blob.size/1024).toFixed(1)}KB`, 'success');
             updateStatus('Conversion complete');
             updateProgress(100);
+            
+            // AUTO DOWNLOAD - Langsung download file
+            downloadFile(blob, newName);
+            log('📥 File auto-download started...', 'success');
+            
+            // Reset UI
+            convertBtn.disabled = false;
+            convertBtn.textContent = 'CONVERT PDF TO JPG';
+            isProcessing = false;
         }
 
         async function canvasToBlobWithTargetSize(canvas, targetSizeKB) {
@@ -592,12 +618,14 @@
         }
 
         function downloadFile(blob, filename) {
-            if (!blob && convertedImage) {
-                // If no blob provided but we have image URL, create blob from canvas
-                const link = document.createElement('a');
-                link.href = convertedImage;
-                link.download = convertedFileName;
-                link.click();
+            // If called without parameters, use stored blob
+            if (!blob && convertedImageBlob) {
+                blob = convertedImageBlob;
+                filename = convertedFileName;
+            }
+            
+            if (!blob) {
+                alert('No file to download. Please convert a PDF first.');
                 return;
             }
             
@@ -605,16 +633,21 @@
             const link = document.createElement('a');
             link.href = url;
             link.download = filename;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
             URL.revokeObjectURL(url);
             
             log(`Downloaded: ${filename}`, 'success');
         }
 
-        // Helper function to open folder (simulated)
-        function openFolder() {
-            alert('In web version, files are downloaded to your Downloads folder.\nClick Download JPG button to save the converted image.');
-        }
+        // Optional: Add keyboard shortcut for download (Ctrl+D)
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'd' && !downloadBtn.disabled) {
+                e.preventDefault();
+                downloadFile();
+            }
+        });
     </script>
 </body>
 </html>
