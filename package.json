@@ -1,0 +1,15 @@
+{
+  "name": "pdf-to-jpg-converter",
+  "version": "1.0.0",
+  "description": "Convert PDF first page to JPG with target file size",
+  "main": "index.html",
+  "scripts": {
+    "dev": "serve ."
+  },
+  "keywords": ["pdf", "jpg", "converter", "vercel"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.0.0"
+  }
+}

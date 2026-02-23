@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to JPG Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title .number {
+            background: #667eea;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .file-input-area {
+            border: 2px dashed #ced4da;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .file-input-area:hover {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+
+        .file-input-area.dragover {
+            border-color: #667eea;
+            background: #e8ecff;
+        }
+
+        .file-input-area i {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .file-name {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #28a745;
+            word-break: break-all;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .settings {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .settings label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .settings input {
+            width: 100px;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .info-box h4 {
+            color: #0b5e9e;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .info-box p {
+            color: #0d3c61;
+            font-size: 13px;
+            font-family: monospace;
+            background: rgba(255,255,255,0.5);
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .convert-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .convert-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .convert-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .progress-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .log-area {
+            background: #1e1e2d;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            height: 200px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .log-line {
+            margin-bottom: 3px;
+            color: #a0a0b0;
+        }
+
+        .log-line.success {
+            color: #4caf50;
+        }
+
+        .log-line.error {
+            color: #f44336;
+        }
+
+        .log-line.info {
+            color: #2196f3;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .secondary-btn {
+            background: white;
+            border: 1px solid #ced4da;
+            color: #495057;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+            transition: all 0.2s;
+        }
+
+        .secondary-btn:hover:not(:disabled) {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .status-bar {
+            background: #e9ecef;
+            padding: 10px 20px;
+            font-size: 13px;
+            color: #495057;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .download-link {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 PDF to JPG Converter</h1>
+            <p>Convert PDF first page to JPG with target file size</p>
+        </div>
+
+        <div class="content">
+            <!-- PDF File Section -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">1</span>
+                    Select PDF File
+                </div>
+                <div class="file-input-area" id="dropArea">
+                    <i>📎</i>
+                    <p>Drag & drop your PDF here or click to browse</p>
+                    <input type="file" id="pdfInput" accept=".pdf" style="display: none;">
+                </div>
+                <div id="fileName" class="file-name"></div>
+            </div>
+
+            <!-- Settings Section -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">2</span>
+                    Settings
+                </div>
+                <div class="settings">
+                    <label for="targetSize">Target File Size:</label>
+                    <input type="number" id="targetSize" min="50" max="1000" value="100">
+                    <span>KB (100KB = 0.1MB)</span>
+                </div>
+            </div>
+
+            <!-- File Naming Info -->
+            <div class="info-box">
+                <h4>📋 File Naming Pattern</h4>
+                <p>Input: Balance_Inquiry_Download_Single_20260114094722727.pdf<br>
+                Output: 2026011-VA_Balance.jpg</p>
+            </div>
+
+            <!-- Convert Button -->
+            <button class="convert-btn" id="convertBtn" onclick="startConversion()">
+                CONVERT PDF TO JPG
+            </button>
+
+            <!-- Progress Section -->
+            <div class="progress-section">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+
+                <div class="log-area" id="logArea">
+                    <div class="log-line">Ready to convert...</div>
+                </div>
+
+                <div class="button-group">
+                    <button class="secondary-btn" id="clearLogBtn" onclick="clearLog()">Clear Log</button>
+                    <button class="secondary-btn" id="downloadBtn" onclick="downloadFile()" disabled>Download JPG</button>
+                </div>
+
+                <!-- Preview Area -->
+                <div id="previewArea" style="text-align: center; margin-top: 15px;"></div>
+            </div>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+            Ready to convert
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // Initialize PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        // State management
+        let currentPDF = null;
+        let currentPDFName = '';
+        let convertedImage = null;
+        let convertedFileName = '';
+        let isProcessing = false;
+
+        // DOM Elements
+        const dropArea = document.getElementById('dropArea');
+        const pdfInput = document.getElementById('pdfInput');
+        const fileNameDiv = document.getElementById('fileName');
+        const logArea = document.getElementById('logArea');
+        const statusBar = document.getElementById('statusBar');
+        const progressBar = document.getElementById('progressBar');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const targetSizeInput = document.getElementById('targetSize');
+        const previewArea = document.getElementById('previewArea');
+
+        // Event Listeners
+        dropArea.addEventListener('click', () => pdfInput.click());
+        dropArea.addEventListener('dragover', handleDragOver);
+        dropArea.addEventListener('dragleave', handleDragLeave);
+        dropArea.addEventListener('drop', handleDrop);
+        pdfInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            dropArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            dropArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            dropArea.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                handleFile(file);
+            } else {
+                log('Please drop a valid PDF file', 'error');
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            currentPDF = file;
+            currentPDFName = file.name;
+            fileNameDiv.textContent = `✓ Selected: ${file.name}`;
+            log(`Selected PDF: ${file.name}`, 'info');
+            
+            const newName = generateNewFilename(file.name);
+            if (newName) {
+                log(`Output will be named: ${newName}`, 'info');
+            }
+        }
+
+        function generateNewFilename(originalName) {
+            // Remove .pdf extension
+            const baseName = originalName.replace('.pdf', '');
+            
+            // Extract date pattern YYYYMMDD
+            const match = baseName.match(/(\d{4})(\d{2})(\d{2})\d+/);
+            
+            if (match) {
+                const year = match[1];
+                const month = match[2];
+                const day = match[3];
+                const shortDate = `${year}${month}${day}`;
+                
+                if (baseName.includes('Balance')) {
+                    return `${shortDate}-VA_Balance.jpg`;
+                } else {
+                    return `${shortDate}-VA_Document.jpg`;
+                }
+            }
+            
+            return null;
+        }
+
+        function log(message, type = '') {
+            const logLine = document.createElement('div');
+            logLine.className = `log-line ${type}`;
+            logLine.textContent = message;
+            logArea.appendChild(logLine);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function clearLog() {
+            logArea.innerHTML = '<div class="log-line">Log cleared</div>';
+        }
+
+        function updateStatus(message) {
+            statusBar.textContent = message;
+        }
+
+        function updateProgress(percent) {
+            progressBar.style.width = `${percent}%`;
+        }
+
+        async function startConversion() {
+            if (!currentPDF) {
+                alert('Please select a PDF file first!');
+                return;
+            }
+
+            if (isProcessing) return;
+
+            isProcessing = true;
+            convertBtn.disabled = true;
+            convertBtn.textContent = 'PROCESSING...';
+            updateStatus('Converting...');
+            clearLog();
+            
+            const targetSizeKB = parseInt(targetSizeInput.value) || 100;
+            
+            log('Starting PDF to JPG conversion...');
+            log(`PDF: ${currentPDFName}`);
+            log(`Target size: ${targetSizeKB}KB`);
+            log('----------------------------------------');
+
+            try {
+                updateProgress(10);
+                await convertPDF(currentPDF, targetSizeKB);
+            } catch (error) {
+                log(`ERROR: ${error.message}`, 'error');
+                updateStatus('Conversion failed');
+            } finally {
+                isProcessing = false;
+                convertBtn.disabled = false;
+                convertBtn.textContent = 'CONVERT PDF TO JPG';
+            }
+        }
+
+        async function convertPDF(file, targetSizeKB) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            
+            log(`PDF loaded: ${pdf.numPages} page(s)`);
+            
+            if (pdf.numPages > 1) {
+                log('Warning: PDF has multiple pages. Only first page will be converted', 'info');
+            }
+            
+            updateProgress(30);
+            
+            // Get first page
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 2.0 }); // Good quality
+            
+            updateProgress(50);
+            
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            // Render page to canvas
+            await page.render({
+                canvasContext: context,
+                viewport: viewport
+            }).promise;
+            
+            updateProgress(70);
+            
+            // Convert canvas to blob with target size
+            const blob = await canvasToBlobWithTargetSize(canvas, targetSizeKB);
+            
+            updateProgress(90);
+            
+            // Create preview
+            const imageUrl = URL.createObjectURL(blob);
+            convertedImage = imageUrl;
+            
+            // Generate filename
+            const newName = generateNewFilename(file.name) || 'converted.jpg';
+            convertedFileName = newName;
+            
+            // Show preview
+            previewArea.innerHTML = `
+                <img src="${imageUrl}" class="preview-image" alt="Preview">
+                <p style="font-size: 12px; color: #666;">Preview (${(blob.size/1024).toFixed(1)}KB)</p>
+            `;
+            
+            // Enable download
+            downloadBtn.disabled = false;
+            downloadBtn.onclick = () => downloadFile(blob, newName);
+            
+            log('CONVERSION COMPLETE!', 'success');
+            log(`File size: ${(blob.size/1024).toFixed(1)}KB`, 'success');
+            updateStatus('Conversion complete');
+            updateProgress(100);
+        }
+
+        async function canvasToBlobWithTargetSize(canvas, targetSizeKB) {
+            const targetSizeBytes = targetSizeKB * 1024;
+            let quality = 0.95;
+            let minQuality = 0.1;
+            let step = 0.05;
+            
+            while (quality >= minQuality) {
+                const blob = await new Promise(resolve => {
+                    canvas.toBlob(resolve, 'image/jpeg', quality);
+                });
+                
+                if (blob.size <= targetSizeBytes || quality <= minQuality) {
+                    log(`  Quality: ${Math.round(quality*100)}%, Size: ${(blob.size/1024).toFixed(1)}KB`, 'info');
+                    return blob;
+                }
+                
+                quality -= step;
+            }
+            
+            // Fallback to minimum quality
+            return await new Promise(resolve => {
+                canvas.toBlob(resolve, 'image/jpeg', minQuality);
+            });
+        }
+
+        function downloadFile(blob, filename) {
+            if (!blob && convertedImage) {
+                // If no blob provided but we have image URL, create blob from canvas
+                const link = document.createElement('a');
+                link.href = convertedImage;
+                link.download = convertedFileName;
+                link.click();
+                return;
+            }
+            
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            log(`Downloaded: ${filename}`, 'success');
+        }
+
+        // Helper function to open folder (simulated)
+        function openFolder() {
+            alert('In web version, files are downloaded to your Downloads folder.\nClick Download JPG button to save the converted image.');
+        }
+    </script>
+</body>
+</html>
